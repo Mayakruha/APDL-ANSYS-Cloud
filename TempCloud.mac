@@ -1,0 +1,82 @@
+ComponentNum = 4
+*DIM,Cmpnt,CHAR,ComponentNum,4
+Cmpnt(1,1)='PLATES','FINGERS','GASPLENUM','OILTUBES'
+Cmpnt(1,2)='MINMAX','MINMAX' ,'MINMAX'   ,'MINMAX'
+Cmpnt(1,3)='1'     ,'353693' ,'3978073'  ,'4286569'
+Cmpnt(1,4)='353692','3978072','4286568'  ,'4419716'
+!-------------------------------------------
+!--Example:
+!--ComponentNum = 3											-Number of Components
+!--Cmpnt(1,1)='Finger','TH'    ,'CBH'						-List of Names for Components
+!--Cmpnt(1,2)='MINMAX','SUBSET','SUBSET'					-Selection Types
+!--Cmpnt(1,3)='1'     ,'ELEM'  ,'NODE'						-Var1
+!--Cmpnt(1,4)='353692','TH'    ,'CBH'						-Var2
+!--------------------------------------------
+!--------------------------------------------
+/POST1
+*GET,NSET,ACTIVE,,SET,NSET									! NSET - number of data sets on result file
+*DIM,TIMEARR,,NSET											! TIMEARR - array for TIME
+!-------Selection
+*DO,CmpntNum,1,ComponentNum
+*IF,Cmpnt(CmpntNum,2),EQ,'MINMAX',THEN
+ESEL,S, , ,%Cmpnt(CmpntNum,3)%,%Cmpnt(CmpntNum,4)%,1		! Selection of elements
+*ELSEIF,Cmpnt(CmpntNum,2),EQ,'SUBSET'
+CMSEL,S,Cmpnt(CmpntNum,4)									! Selection of subset
+*ENDIF
+*IF,Cmpnt(CmpntNum,3),NE,'NODE',THEN
+NSLE,S														! Selection of corresponding nodes
+*ENDIF
+!-------
+*GET,CTN,NODE,0,COUNT										! CTN = maximum active node number
+*GET,NMIN,NODE,0,NUM,MIN									! NMIN = minimum active node number
+!-------Output: First file
+SET,FIRST
+*GET,TIMEARR(1),ACTIVE,,SET,TIME							! time associated with current results
+*CFOPEN,'Temp_cloud_%Cmpnt(CmpntNum,1)%_%TIMEARR(1)%','dat'
+j=NMIN
+*DO,i,1,CTN
+*VWRITE,NX(j),NY(j),NZ(j),TEMP(j)
+(3(E20.12,','),f8.3)
+j=ndnext(j)
+*ENDDO
+!-------Output: Next files
+*DO,k,2,NSET
+SET,NEXT
+*GET,TIMEARR(k),ACTIVE,,SET,TIME							! TIME = time associated with current results
+*CFOPEN,'Temp_cloud_%Cmpnt(CmpntNum,1)%_%TIMEARR(k)%','dat'
+j=NMIN
+*IF,ComponentNum,EQ,1,THEN
+*DO,i,1,CTN
+*VWRITE,TEMP(j)
+(f8.3)
+j=ndnext(j)
+*ENDDO
+*ELSE
+*DO,i,1,CTN
+*VWRITE,NX(j),NY(j),NZ(j),TEMP(j)
+(3(E20.12,','),f8.3)
+j=ndnext(j)
+*ENDDO
+*ENDIF
+*ENDDO
+*ENDDO
+!--------Output:Time points
+*CFOPEN,'TempTimeTable','csv'
+*DO,k,1,NSET
+TIME=TIMEARR(k)
+*VWRITE,k,TIME
+File%I:Temperature1,%G
+*ENDDO
+!--------Restore
+ALLSEL,ALL
+ComponentNum=
+*DEL,Cmpnt
+*DEL,TIMEARR
+NSET=
+CmpntNum=
+CTN=
+NMIN=
+i=
+j=
+k=
+TIME=
