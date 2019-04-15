@@ -1,0 +1,87 @@
+ComponentNum = 2
+MeshFile='YES'
+*DIM,Cmpnt,CHAR,ComponentNum,4
+Cmpnt(1,1)='MFFlange','FixRing'
+Cmpnt(1,2)='SUBSET','SUBSET'
+Cmpnt(1,3)='ELEM','ELEM'
+Cmpnt(1,4)='MFFLANGE','FIXING_RING'
+!-------------------------------------------
+!--Example:
+!--ComponentNum = 3												-Number of components
+!--Cmpnt(1,1)='Finger','TH'										-List of Names for components
+!--Cmpnt(1,2)='MINMAX','SUBSET'									-Selection Types
+!--Cmpnt(1,3)='1'     ,'ELEM'									-Var1
+!--Cmpnt(1,4)='353692','TH'										-Var2
+!--------------------------------------------
+!--------------------------------------------
+/POST1
+RSYS,0
+*GET,NSET,ACTIVE,,SET,NSET										! NSET - number of data sets on result file
+*DIM,TIMEARR,,NSET												! TIMEARR - array for TIME
+!-------Selection
+*DO,CmpntNum,1,ComponentNum
+*IF,Cmpnt(CmpntNum,2),EQ,'MINMAX',THEN
+ESEL,S, , ,%Cmpnt(CmpntNum,3)%,%Cmpnt(CmpntNum,4)%,1			! Selection of elements
+*ELSEIF,Cmpnt(CmpntNum,2),EQ,'SUBSET'
+CMSEL,S,Cmpnt(CmpntNum,4)										! Selection of subset
+*ENDIF
+*IF,Cmpnt(CmpntNum,2),NE,'NODE',THEN
+NSLE,S															! Selection of corresponding nodes
+*ENDIF
+*IF,MeshFile,EQ,'YES',THEN
+CDWRITE,DB,%Cmpnt(CmpntNum,1)%_mesh,'cdb',,'',''
+*ENDIF
+!-------
+*GET,CTN,NODE,0,COUNT											! CTN = maximum active node number
+*GET,NMIN,NODE,0,NUM,MIN										! NMIN = minimum active node number
+!-------Output: First file
+SET,FIRST
+*GET,TIMEARR(1),ACTIVE,,SET,TIME								! time associated with current results
+*CFOPEN,'Displ_cloud_%Cmpnt(CmpntNum,1)%_%TIMEARR(1)%','dat'
+j=NMIN
+*DO,i,1,CTN
+*VWRITE,j,UX(j),UY(j),UZ(j)
+%I,%G,%G,%G
+j=ndnext(j)
+*ENDDO
+!-------Output: Next files
+*DO,k,2,NSET
+SET,NEXT
+*GET,TIMEARR(k),ACTIVE,,SET,TIME								! time associated with current results
+*CFOPEN,'Displ_cloud_%Cmpnt(CmpntNum,1)%_%TIMEARR(k)%','dat'
+j=NMIN
+*IF,ComponentNum,EQ,1,THEN
+*DO,i,1,CTN
+*VWRITE,UX(j),UY(j),UZ(j)
+%G,%G,%G
+j=ndnext(j)
+*ENDDO
+*ELSE
+*DO,i,1,CTN
+*VWRITE,j,UX(j),UY(j),UZ(j)
+%I,%G,%G,%G
+j=ndnext(j)
+*ENDDO
+*ENDIF
+*ENDDO
+*ENDDO
+!--------Output:Time points
+*CFOPEN,'DisplTimeTable','csv'
+*DO,k,1,NSET
+TIME=TIMEARR(k)
+*VWRITE,%k%,%k%,%k%,TIME
+File%C:Displacement1,File%C:Displacement2,File%C:Displacement3,%G
+*ENDDO
+!--------Restore
+ALLSEL,ALL
+ComponentNum=
+*DEL,Cmpnt
+*DEL,TIMEARR
+NSET=
+CmpntNum=
+CTN=
+NMIN=
+i=
+j=
+k=
+TIME=
