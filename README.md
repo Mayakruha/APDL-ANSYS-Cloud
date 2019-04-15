@@ -2,6 +2,7 @@
 The macroses extract temperature/displacement and coordinates for parts from the APDL ANSYS model and write them into the files.
 The macros DisplCloud.mac extracts displacement and coordinates
 The macros TempCloud.mac extracts temperature and coordinates
+The macros DisplMesh.mac extracts displacement and mesh
 
 ---Scope---
 The macroses are useful when boundary conditions (temperature, displacements) based on result from another model made in APDL ANSYS have to be applied.
